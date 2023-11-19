@@ -13,7 +13,8 @@ func _ready() -> void:
 	Game.call_over.connect(refresh_top_cards)
 	Game.to_show_final.connect(show_final_screen)
 	final_screen.button_pressed.connect(enter_new_scene)
-	Rule.score_doubled.connect(top_card_bar.double_scores)
+#	Rule.score_doubled.connect(top_card_bar.double_scores)
+	Game.score_doubled.connect(top_card_bar.double_scores)
 
 
 func reset() -> void:

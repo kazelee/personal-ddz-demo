@@ -46,8 +46,10 @@ offset_right = 448.0
 offset_bottom = 56.0
 
 [node name="CallLandlordTimer" type="Timer" parent="."]
+one_shot = true
 
 [node name="LeadCardTimer" type="Timer" parent="."]
+one_shot = true
 
 [connection signal="timeout" from="CallLandlordTimer" to="." method="_on_call_landlord_timer_timeout"]
 [connection signal="timeout" from="LeadCardTimer" to="." method="_on_lead_card_timer_timeout"]

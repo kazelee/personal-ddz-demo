@@ -32,6 +32,8 @@ enum State {
 var is_ai := false
 var my_id := 0
 
+var hint_list := []
+
 
 func _ready() -> void:
 	Game.new_game.connect(reset)
@@ -78,15 +80,15 @@ func call_landlord(id: int) -> void:
 
 	lead_place.show_count_down(15)
 
-	if is_ai:
-		print("now turn: %s" % Game.get_now_turn())
-		print("[%10s] try to call landlord" % my_id)
-		randomize()
-		await get_tree().create_timer(3).timeout
-		var call_score = [1, 2, 3, 0][randi_range(Game.highest_call, 3)]
-		print("[%10s] called: %s" % [my_id, call_score])
-		Game.take_my_call(my_id, call_score)
-		return
+#	if is_ai:
+#		print("now turn: %s" % Game.get_now_turn())
+#		print("[%10s] try to call landlord" % my_id)
+#		randomize()
+#		await get_tree().create_timer(3).timeout
+#		var call_score = [1, 2, 3, 0][randi_range(Game.highest_call, 3)]
+#		print("[%10s] called: %s" % [my_id, call_score])
+#		Game.take_my_call(my_id, call_score)
+#		return
 
 	if player_position == Position.DOWN:
 		print("now turn: %s" % Game.get_now_turn())
@@ -121,60 +123,74 @@ func lead_cards(id: int) -> void:
 	if id != my_id:
 		return
 
-	if is_ai:
-		lead_place.show_count_down(25)
-		print("now turn: %s" % Game.get_now_turn())
-		print("[%10s] try to lead cards" % my_id)
-#		var timer := Timer.new()
-#		add_child(timer)
-#		timer.start(10)
-		var s = Game.biggest_lead.size()
-		randomize()
-		var selected := []
-		var tmp_cards := Game.get_cards(my_id)
-		var times := 1000
-		while times > 0:
-			times -= 1
-			var num := 0
+#	if is_ai:
+#		lead_place.show_count_down(25)
+#		print("now turn: %s" % Game.get_now_turn())
+#		print("[%10s] try to lead cards" % my_id)
+##		var timer := Timer.new()
+##		add_child(timer)
+##		timer.start(10)
+#		var s = Game.biggest_lead.size()
+#		randomize()
+#		var selected := []
+#		var tmp_cards := Game.get_cards(my_id)
+#		var times := 1000
+#		while times > 0:
+#			times -= 1
+#			var num := 0
+#
+#			if s == 0:
+#				var ran := randfn(4.0, 2.0)
+#				num = int(ran) % 20 + 1
+#			else:
+#				var choice := []
+#				choice.resize(8)
+#				choice.fill(s)
+#				choice.append_array([4, 2])
+#				num = choice[randi_range(0, 9)]
+#
+#			print(num)
+#			while selected.size() < num:
+#				var tmp :int = tmp_cards.pick_random()
+#				if tmp not in selected:
+#					selected.append(tmp)
+#			print(selected)
+#			if Rule.is_valid(selected):
+#				break
+#			else:
+#				selected = []
+#				continue
+#		print(selected)
+#		if not Rule.is_valid(selected):
+#			selected = []
+#			if Rule.get_lead_state(my_id) == State.FIRST:
+#				selected.append(tmp_cards.back())
+#
+##		selected = selected if Rule.is_valid(selected) else \
+##		[tmp_cards.back()] if Rule.get_lead_state(my_id) == State.FIRST else []
+#		print("[%10s] led: %s" % [my_id, selected])
+#		Game.take_my_lead(my_id, selected)
+##		timer.queue_free()
+#		return
 
-			if s == 0:
-				var ran := randfn(4.0, 2.0)
-				num = int(ran) % 20 + 1
-			else:
-				var choice := []
-				choice.resize(8)
-				choice.fill(s)
-				choice.append_array([4, 2])
-				num = choice[randi_range(0, 9)]
 
-			print(num)
-			while selected.size() < num:
-				var tmp :int = tmp_cards.pick_random()
-				if tmp not in selected:
-					selected.append(tmp)
-			print(selected)
-			if Rule.is_valid(selected):
-				break
-			else:
-				selected = []
-				continue
-		print(selected)
-		if not Rule.is_valid(selected):
-			selected = []
-			if Rule.get_lead_state(my_id) == State.FIRST:
-				selected.append(tmp_cards.back())
-
-#		selected = selected if Rule.is_valid(selected) else \
-#		[tmp_cards.back()] if Rule.get_lead_state(my_id) == State.FIRST else []
-		print("[%10s] led: %s" % [my_id, selected])
-		Game.take_my_lead(my_id, selected)
-#		timer.queue_free()
-		return
 
 	if player_position == Position.DOWN:
 		print("now turn: %s" % Game.get_now_turn())
 		print("[%10s] try to lead cards" % my_id)
-		lead_card_bar.init_buttons(Rule.get_lead_state(my_id))
+		if Game.biggest_lead != []:
+			var last_str := GlobalEngine.idarr2str(Game.biggest_lead)
+			var my_cards := GlobalEngine.idarr2str(Game.get_cards(my_id))
+			var cards_dic: Dictionary = GlobalEngine.list_greater_cards(last_str, my_cards)
+			if cards_dic == null:
+				lead_card_bar.init_buttons(State.NONE)
+				lead_card_bar.show()
+				lead_card_timer.start(5)
+				return
+			for arr in cards_dic.values():
+				hint_list.append_array(arr)
+
+		lead_card_bar.init_buttons(Game.get_lead_state(my_id))
 		lead_card_bar.show()
 		lead_card_timer.start(25)
 
@@ -187,13 +203,20 @@ func upload_led(lead: Lead) -> void:
 			var selected: Array = card_place.selected_cards
 			if selected == []:
 				return
-			if not Rule.is_valid(selected):
+#			if not Rule.is_valid(selected):
+#				return
+			var last_str := GlobalEngine.idarr2str(Game.biggest_lead)
+			var cards_str := GlobalEngine.idarr2str(selected)
+			var last_cards := GlobalEngine.str2cards(last_str)
+			var cards := GlobalEngine.str2cards(cards_str)
+			if not GlobalEngine.cards_greater(last_cards, cards):
 				return
 			lead_card_bar.hide()
 			lead_card_timer.stop()
 			print("[%10s] led: %s" % [my_id, selected])
 			Game.rpc("take_my_lead", my_id, Game.sorted(selected))
 			card_place.selected_cards = []
+			hint_list = []
 
 			await get_tree().create_timer(0.5).timeout
 			card_place.update_cards(Game.get_cards(my_id))
@@ -253,6 +276,7 @@ func _on_lead_card_timer_timeout() -> void:
 		selected.append(Game.get_cards(my_id).back())
 		print("[%10s] led: %s" % [my_id, selected])
 		Game.rpc("take_my_lead", my_id, selected)
+		hint_list = []
 		await get_tree().create_timer(0.5).timeout
 		card_place.update_cards(Game.get_cards(my_id))
 	else:
