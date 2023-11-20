@@ -1,5 +1,8 @@
 extends TextureRect
 
+func _ready() -> void:
+	SoundManager.play_music("res://assets/audio/bg_room.mp3")
+
 
 func _on_ai_mode_pressed() -> void:
 	Game.is_ai_mode = true

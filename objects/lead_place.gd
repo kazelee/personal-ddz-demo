@@ -8,8 +8,8 @@ enum Position {
 	DOWN, RIGHT, LEFT
 }
 
-var _get_position # func(i, s) -> Vec2
-
+#var _get_position # func(i, s) -> Vec2
+var my_position : Position
 
 func clear() -> void:
 	for node in get_children():
@@ -42,19 +42,20 @@ func show_lead_result(cards: Array) -> void:
 
 
 func init_lead_position(pos: Position) -> void:
-	match pos:
-		Position.DOWN:
-			_get_position = func(i: int, s: int) -> Vector2:
-				return Vector2((i - (s - 1) / 2) * 16, 0)
-
-		Position.RIGHT:
-			_get_position = func(i: int, s: int) -> Vector2:
-				var ns := s if s <= 10 else 10
-				return Vector2(((i % 10) - ns + 1) * 16, i / 10 * 16)
-
-		Position.LEFT:
-			_get_position = func(i: int, s: int) -> Vector2:
-				return Vector2(i % 10 * 16, i / 10 * 16)
+	my_position = pos
+#	match pos:
+#		Position.DOWN:
+#			_get_position = func(i: int, s: int) -> Vector2:
+#				return Vector2((i - (s - 1) / 2) * 16, 0)
+#
+#		Position.RIGHT:
+#			_get_position = func(i: int, s: int) -> Vector2:
+#				var ns := s if s <= 10 else 10
+#				return Vector2(((i % 10) - ns + 1) * 16, i / 10 * 16)
+#
+#		Position.LEFT:
+#			_get_position = func(i: int, s: int) -> Vector2:
+#				return Vector2(i % 10 * 16, i / 10 * 16)
 
 
 func _update_cards(cards: Array) -> void:
@@ -63,4 +64,16 @@ func _update_cards(cards: Array) -> void:
 		card.texture = load("res://assets/cards/card%02d.png" % cards[index])
 		card.scale = Vector2.ONE * 0.5
 		add_child(card)
-		card.position = _get_position.call(index, cards.size())
+#		card.position = _get_position.call(index, cards.size())
+		var i := index
+		var s := cards.size()
+		match my_position:
+			Position.DOWN:
+				card.position = Vector2((i - (s - 1) / 2) * 16, 0)
+
+			Position.RIGHT:
+				var ns := s if s <= 10 else 10
+				card.position = Vector2(((i % 10) - ns + 1) * 16, i / 10 * 16)
+
+			Position.LEFT:
+				card.position = Vector2(i % 10 * 16, i / 10 * 16)

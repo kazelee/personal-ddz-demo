@@ -17,8 +17,10 @@ func init_scores(my_id: int, new_scores: Dictionary, final_scores: Dictionary) -
 
 	if new_scores[my_id] > 0:
 		title_label.text = "您赢了！"
+		SoundManager.play_sound("win")
 	else:
 		title_label.text = "您输了T_T"
+		SoundManager.play_sound("lose")
 
 	for node in score_table.get_children():
 		if node.owner == null:

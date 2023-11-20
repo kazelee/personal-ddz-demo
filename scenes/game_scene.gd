@@ -9,14 +9,17 @@ enum Select {
 
 
 func _ready() -> void:
+	SoundManager.play_music("res://assets/audio/bg_game.ogg")
 	Game.new_game.connect(reset)
 	Game.call_over.connect(refresh_top_cards)
 	Game.to_show_final.connect(show_final_screen)
 	final_screen.button_pressed.connect(enter_new_scene)
-	Rule.score_doubled.connect(top_card_bar.double_scores)
+#	Rule.score_doubled.connect(top_card_bar.double_scores)
+	Game.score_doubled.connect(top_card_bar.double_scores)
 
 
 func reset() -> void:
+	SoundManager.bgm_continue()
 	top_card_bar.reset()
 
 
@@ -26,6 +29,7 @@ func refresh_top_cards() -> void:
 
 
 func show_final_screen(my_id: int, new_scores: Dictionary, final_scores: Dictionary) -> void:
+	SoundManager.bgm_stop()
 	final_screen.init_scores(my_id, new_scores, final_scores)
 	final_screen.show()
 

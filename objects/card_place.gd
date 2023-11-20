@@ -35,6 +35,7 @@ func minus_others_cards(minus: int) -> void:
 
 
 func update_cards(cards: Array) -> void:
+	print(cards)
 	for node in get_children():
 		if node.owner == null:
 			node.queue_free()
@@ -62,6 +63,8 @@ func select_cards(cards: Array) -> void:
 		if node is Card and node.card_id in cards:
 			selected_cards.append(node.card_id)
 			node.position = Vector2(node.position.x, -32)
+		else:
+			node.position = Vector2(node.position.x, 0)
 
 
 func _select_card(id: int, card: Card) -> void:
