@@ -9,6 +9,7 @@ texture = ExtResource("1_6smpk")
 script = ExtResource("2_av4fk")
 
 [node name="Timer" type="Timer" parent="."]
+one_shot = true
 
 [node name="Time" type="Label" parent="."]
 visible = false

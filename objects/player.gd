@@ -33,7 +33,7 @@ var is_ai := false
 var my_id := 0
 
 var hint_list := []
-
+var hint_index := 0
 
 func _ready() -> void:
 	Game.new_game.connect(reset)
@@ -80,15 +80,16 @@ func call_landlord(id: int) -> void:
 
 	lead_place.show_count_down(15)
 
-#	if is_ai:
-#		print("now turn: %s" % Game.get_now_turn())
-#		print("[%10s] try to call landlord" % my_id)
-#		randomize()
-#		await get_tree().create_timer(3).timeout
-#		var call_score = [1, 2, 3, 0][randi_range(Game.highest_call, 3)]
-#		print("[%10s] called: %s" % [my_id, call_score])
-#		Game.take_my_call(my_id, call_score)
-#		return
+	if is_ai:
+		# 随机叫分的逻辑仍然保留（随机出牌就算了）
+		print("now turn: %s" % Game.get_now_turn())
+		print("[%10s] try to call landlord" % my_id)
+		randomize()
+		await get_tree().create_timer(3).timeout
+		var call_score = [1, 2, 3, 0][randi_range(Game.highest_call, 3)]
+		print("[%10s] called: %s" % [my_id, call_score])
+		Game.take_my_call(my_id, call_score)
+		return
 
 	if player_position == Position.DOWN:
 		print("now turn: %s" % Game.get_now_turn())
@@ -173,6 +174,42 @@ func lead_cards(id: int) -> void:
 ##		timer.queue_free()
 #		return
 
+	if is_ai:
+		# 默认出右起第一张，提示有牌出提示牌（默认第一个提示）
+		if Game.get_lead_state(my_id) == State.FIRST:
+			await get_tree().create_timer(3).timeout
+			var back = Game.get_cards(my_id).back()
+			var lead = []
+			lead.append(back)
+			Game.take_my_lead(my_id, lead)
+			return
+#			_show_lead_result(my_id, lead)
+
+		print("now turn: %s" % Game.get_now_turn())
+		print("[%10s] try to lead cards" % my_id)
+		if Game.biggest_lead != []:
+			var last_str := GlobalEngine.idarr2str(Game.biggest_lead)
+			var my_cards := GlobalEngine.idarr2str(Game.get_cards(my_id))
+			var cards_dic: Dictionary = GlobalEngine.list_greater_cards(last_str, my_cards)
+			if cards_dic == {}:
+				await get_tree().create_timer(1).timeout
+				Game.take_my_lead(my_id, [])
+				return
+			else:
+				var hint_one = cards_dic.values()[0][0]
+				var try := GlobalEngine.str2cards(hint_one)
+				var cards_reverse = Game.get_cards(my_id)
+				cards_reverse.reverse()
+				var visited := []
+				for point in try:
+					for item in cards_reverse:
+						if point == GlobalEngine.point2str(item) and item not in visited:
+							visited.append(item)
+							break
+
+				await get_tree().create_timer(3).timeout
+				Game.take_my_lead(my_id, visited)
+				return
 
 
 	if player_position == Position.DOWN:
@@ -182,13 +219,15 @@ func lead_cards(id: int) -> void:
 			var last_str := GlobalEngine.idarr2str(Game.biggest_lead)
 			var my_cards := GlobalEngine.idarr2str(Game.get_cards(my_id))
 			var cards_dic: Dictionary = GlobalEngine.list_greater_cards(last_str, my_cards)
-			if cards_dic == null:
+			if cards_dic == {}:
 				lead_card_bar.init_buttons(State.NONE)
 				lead_card_bar.show()
 				lead_card_timer.start(5)
+				lead_place.show_count_down(5)
 				return
 			for arr in cards_dic.values():
 				hint_list.append_array(arr)
+			print(hint_list)
 
 		lead_card_bar.init_buttons(Game.get_lead_state(my_id))
 		lead_card_bar.show()
@@ -206,10 +245,19 @@ func upload_led(lead: Lead) -> void:
 #			if not Rule.is_valid(selected):
 #				return
 			var last_str := GlobalEngine.idarr2str(Game.biggest_lead)
+			print(last_str)
 			var cards_str := GlobalEngine.idarr2str(selected)
+			print(cards_str)
 			var last_cards := GlobalEngine.str2cards(last_str)
-			var cards := GlobalEngine.str2cards(cards_str)
-			if not GlobalEngine.cards_greater(last_cards, cards):
+			print(last_cards)
+			var my_cards := GlobalEngine.str2cards(cards_str)
+			print(my_cards)
+			# means last_cards > my_cards?
+#			if GlobalEngine.cards_greater(last_cards, my_cards):
+#				print("not?")
+#				return
+			if not GlobalEngine.cards_greater(my_cards, last_cards):
+				print("cant")
 				return
 			lead_card_bar.hide()
 			lead_card_timer.stop()
@@ -217,17 +265,35 @@ func upload_led(lead: Lead) -> void:
 			Game.rpc("take_my_lead", my_id, Game.sorted(selected))
 			card_place.selected_cards = []
 			hint_list = []
+			hint_index = 0
 
 			await get_tree().create_timer(0.5).timeout
 			card_place.update_cards(Game.get_cards(my_id))
 
 		Lead.HINT:
-			pass
+			print(hint_index)
+			print(hint_list)
+			var try_str: String = hint_list[hint_index]
+			print(try_str)
+			var try := GlobalEngine.str2cards(try_str)
+			var cards_reverse = Game.get_cards(my_id)
+			cards_reverse.reverse()
+			var visited := []
+			for point in try:
+				for item in cards_reverse:
+					if point == GlobalEngine.point2str(item) and item not in visited:
+						visited.append(item)
+						break
+			card_place.select_cards(visited)
+			hint_index = (hint_index + 1) % len(hint_list)
+
 
 		Lead.PASS:
 			lead_card_bar.hide()
 			lead_card_timer.stop()
 			Game.rpc("take_my_lead", my_id, [])
+			hint_list = []
+			hint_index = 0
 
 
 func update_scores(_id, _new_scores, _final_scores) -> void:
@@ -252,6 +318,9 @@ func _init_player_id() -> void:
 func _show_call_result(id: int, score: int) -> void:
 	if my_id == id:
 		lead_place.show_call_result(score)
+		var s = "score_" + str(score)
+		print(s)
+		SoundManager.play_sound(s)
 
 
 func _on_call_landlord_timer_timeout() -> void:
@@ -261,6 +330,7 @@ func _on_call_landlord_timer_timeout() -> void:
 func _show_lead_result(id: int, cards: Array) -> void:
 	if my_id == id:
 		lead_place.show_lead_result(cards)
+		SoundManager.play_sound("deal")
 		if player_position != Position.DOWN:
 			card_place.minus_others_cards(cards.size())
 
@@ -277,6 +347,7 @@ func _on_lead_card_timer_timeout() -> void:
 		print("[%10s] led: %s" % [my_id, selected])
 		Game.rpc("take_my_lead", my_id, selected)
 		hint_list = []
+		hint_index = 0
 		await get_tree().create_timer(0.5).timeout
 		card_place.update_cards(Game.get_cards(my_id))
 	else:

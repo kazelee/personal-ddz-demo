@@ -5,9 +5,16 @@ extends Node
 const DATA_PATH := "res://assets/data.json"
 const TYPE_CARDS_PATH := "res://assets/type_cards.json"
 
-var _point := PackedInt32Array([11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14])
+var _point := PackedInt32Array([
+	11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+	11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+	11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+	11, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14
+])
 
-var _point_str := PackedStringArray(["3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2", "BJ", "CJ"])
+var _point_str := PackedStringArray([
+	"3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2", "BJ", "CJ"
+])
 
 const CARDS := ["3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2", "BJ", "CJ"]
 var CARD_IDX: Dictionary
@@ -31,6 +38,10 @@ func _ready() -> void:
 	print(list_greater_cards("6-6-6-3-3", "CJ-A-A-A-K-Q-J-10-10-10-10-9-7-7-5-5"))
 
 
+func point2str(id: int) -> String:
+	return _point_str[_point[id]]
+
+
 func idarr2str(cards: Array) -> String:
 	var ordered_cards := Game.sorted(cards)
 	ordered_cards.reverse()
@@ -51,7 +62,7 @@ func cards2str(cards: Array) -> String:
 
 
 func str2cards(string: String) -> Array:
-	return string.split('-')
+	return string.split('-') if string != "" else []
 
 
 func str2cardmap(string: String) -> Dictionary:
@@ -78,6 +89,7 @@ func check_card_type(cards: Array) -> Array:
 
 
 func type_greater(type_x: Array, type_y: Array) -> bool:
+	print("compare %s with %s" % [type_x, type_y])
 	"""check if x is greater than y
 	type_x/y: (type, weight)
 	>0: x > y
@@ -87,11 +99,11 @@ func type_greater(type_x: Array, type_y: Array) -> bool:
 	if type_x[0] == type_y[0]:
 		return type_x[1] > type_y[1]
 	else:
-		if type_x[0] == "rocket":
+		if type_x[0] == "rocket" and type_x[1] != -1:
 			return true
-		elif type_y[0] == "rocket":
+		elif type_y[0] == "rocket" and type_y[1] != -1:
 			return false
-		elif type_x[0] == "bomb":
+		elif type_x[0] == "bomb" and type_y[1] != -1:
 			return true
 	return false
 
@@ -101,11 +113,14 @@ func cards_greater(cards_x: Array, cards_y: Array) -> bool:
 	x, y可能分别组成不同牌型
 	只要有x一种牌型大于y，就返回True和牌型
 	"""
+	# x is me while y is other
 	var type_x := check_card_type(cards_x)
 	var type_y := check_card_type(cards_y)
-	if type_x == null and type_y != null:
+	if type_x == [] and type_y != []:
+		return false
+	if type_x != [] and type_y == []:
 		return true
-	if type_y == null:
+	if type_x == [] and type_y == []:
 		return false
 	for tx in type_x:
 		for ty in type_y:

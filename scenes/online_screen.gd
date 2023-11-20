@@ -15,6 +15,7 @@ var my_peer_id := 1
 
 
 func _ready() -> void:
+	SoundManager.bgm_stop()
 	multiplayer.multiplayer_peer.close()
 	multiplayer.connected_to_server.connect(join_to_server)
 

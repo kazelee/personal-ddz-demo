@@ -22,8 +22,8 @@ var _order := PackedInt32Array([47, 51, 3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43
 
 
 var _players := [1, 2, 3]
-var _scores := {"1": 1000, "2": 1000, "3": 1000}
-var _new_scores := {"1": 100, "2": 50, "3": 50}
+var _scores := {1: 1000, 2: 1000, 3: 1000}
+var _new_scores := {1: 100, 2: 50, 3: 50}
 var _all_cards := {}
 
 var my_id := 1
@@ -35,7 +35,13 @@ var highest_call := 0
 var highest_caller := 1
 var _call_times := 0
 
-var biggest_lead := []
+var biggest_lead := []:
+	set(v):
+		biggest_lead = v
+		var last_str := GlobalEngine.idarr2str(biggest_lead)
+		var last_cards := GlobalEngine.str2cards(last_str)
+		last_type = GlobalEngine.check_card_type(last_cards)
+
 var biggest_leader := 1
 var _pass_times := 0
 
@@ -58,7 +64,7 @@ func set_type(v: Array) -> void:
 	last_type = v
 	if v == []:
 		return
-	if last_type[0] == "bomb" or last_type[0] == "rocket":
+	if last_type[0][0] == "bomb" or last_type[0][0] == "rocket":
 		score_doubled.emit()
 		_double_scores()
 
@@ -157,6 +163,7 @@ func take_my_lead(id: int, cards: Array) -> void:
 		for card in cards:
 #			get_cards(id).erase(card)
 			_all_cards[id].erase(card)
+		_all_cards[id] = sorted(_all_cards[id])
 #	print(_pass_times)
 	_turn_to_next()
 

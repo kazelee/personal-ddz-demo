@@ -18,8 +18,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 Game="*res://globals/game.gd"
-Rule="*res://globals/rule.gd"
 GlobalEngine="*res://globals/engine.gd"
+SoundManager="*res://globals/sound_manager.tscn"
 
 [display]
 
