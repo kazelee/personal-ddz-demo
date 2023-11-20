@@ -1,5 +1,4 @@
-# [-personal-ddz-demo](https://github.com/kazelee/-personal-ddz-demo#-personal-ddz-demo)
-
+# -personal-ddz-demo
 [private] a stalled demo: doudizhu
 
 ## 2023-11-20 最终上传
